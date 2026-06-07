@@ -39,9 +39,10 @@ router.get('/my-status', auth, async (req, res) => {
  * @route POST /api/candidate-portal/submit
  * @desc Explicitly handle candidate profile submissions from the portal
  */
-router.post('/submit', upload.single('resume'), async (req, res) => {
+router.post('/submit', auth, upload.single('resume'), async (req, res) => {
   try {
     const { name, email, phone, skills, jobId } = req.body;
+    const authenticatedEmail = req.user.email;
     
     // 1. Fetch Job context for accurate confirmation emails
     let jobTitle = 'Software Engineer';
@@ -83,22 +84,31 @@ router.post('/submit', upload.single('resume'), async (req, res) => {
       aiParsedData = await aiClientService.parseResume(req.file.path);
     }
 
-    // 4. Data Harmonization: AI > Local > Form Data
+    // 4. Data Harmonization: Authenticated User > AI > Local > Form Data
+    // We FORCE the email to be the one the user logged in with to maintain account integrity
     const finalCandidateData = {
       name: (aiParsedData && !aiParsedData.fallback && aiParsedData.name !== "Unknown Candidate") ? aiParsedData.name : (name || 'Anonymous Candidate'),
-      email: (aiParsedData && !aiParsedData.fallback && aiParsedData.email !== "Not Found") ? aiParsedData.email : email,
+      email: authenticatedEmail.toLowerCase(), // ALWAYS use the logged-in user's email
       phone: (aiParsedData && !aiParsedData.fallback) ? aiParsedData.phone : phone,
       skills: (aiParsedData && !aiParsedData.fallback && aiParsedData.skills.length > 0) ? aiParsedData.skills : (parsedSkills.length > 0 ? parsedSkills : []),
       resumeUrl: req.file ? req.file.path : null,
       resumeText: (resumeText && !resumeText.includes('Fallback: Text extraction failed')) ? resumeText : (aiParsedData?.raw_text || resumeText)
     };
 
-    const newCandidate = new Candidate({
-      ...finalCandidateData,
-      status: 'Applied'
-    });
-
-    const savedCandidate = await newCandidate.save();
+    // Check if profile already exists for this email and update it instead of creating duplicate
+    let candidate = await Candidate.findOne({ email: finalCandidateData.email });
+    
+    if (candidate) {
+      Object.assign(candidate, finalCandidateData);
+      candidate.status = 'Applied'; // Reset status on resubmission
+      await candidate.save();
+    } else {
+      candidate = new Candidate({
+        ...finalCandidateData,
+        status: 'Applied'
+      });
+      await candidate.save();
+    }
 
     // 5. Trigger automated response
     try {
@@ -109,7 +119,7 @@ router.post('/submit', upload.single('resume'), async (req, res) => {
 
     res.status(201).json({
       message: 'Profile submitted successfully',
-      candidateId: savedCandidate._id,
+      candidateId: candidate._id,
       aiProcessed: aiParsedData && !aiParsedData.fallback
     });
   } catch (error) {
