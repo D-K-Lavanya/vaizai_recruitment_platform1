@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-border: var(--brand-border);
+  --color-brand-text: var(--brand-text);
+  --color-brand-muted: var(--brand-muted);
+}
+
+:root {
+  /* DARK THEME (Default) */
+  --brand-primary: #10b981;    /* Emerald 500 */
+  --brand-secondary: #34d399;  /* Emerald 400 */
+  --brand-bg: #020617;         /* Slate 950 */
+  --brand-surface: #0f172a;    /* Slate 900 */
+  --brand-border: #1e293b;     /* Slate 800 */
+  --brand-text: #f1f5f9;       /* Slate 100 */
+  --brand-muted: #64748b;      /* Slate 500 */
+  
+  background-color: var(--brand-bg);
+  color: var(--brand-text);
+}
+
+[data-theme='light'] {
+  /* LIGHT THEME */
+  --brand-primary: #059669;    /* Emerald 600 (Darker for better contrast on white) */
+  --brand-secondary: #10b981;  /* Emerald 500 */
+  --brand-bg: #f8fafc;         /* Slate 50 */
+  --brand-surface: #ffffff;    /* White */
+  --brand-border: #e2e8f0;     /* Slate 200 */
+  --brand-text: #0f172a;       /* Slate 900 */
+  --brand-muted: #475569;      /* Slate 600 */
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--brand-bg);
+  color: var(--brand-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--brand-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--brand-border);
+  border-radius: 10px;
+}
+
+/* Utility to override hardcoded dark-mode styles in light mode */
+[data-theme='light'] .text-white { color: var(--brand-text) !important; }
+[data-theme='light'] .bg-slate-900 { background-color: var(--brand-surface) !important; }
+[data-theme='light'] .bg-slate-950 { background-color: var(--brand-bg) !important; }
+[data-theme='light'] .border-slate-800 { border-color: var(--brand-border) !important; }
+[data-theme='light'] .text-slate-400 { color: var(--brand-muted) !important; }
+[data-theme='light'] .text-slate-500 { color: var(--brand-muted) !important; }
